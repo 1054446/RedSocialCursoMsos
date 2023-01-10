@@ -1,0 +1,59 @@
+version: '3.3'
+services:
+  discovery-server:
+    build: ServiceDiscovery/service-discovery/
+    ports:
+      - "8761:8761"
+  red-social-postgres:
+    build: BdPostgres/
+    environment:
+      - POSTGRES_PASSWORD=secret
+    ports:
+      - 5432:5432
+    volumes:
+      - ./blockstorage/postgres:/var/lib/postgresql/data
+  rabbitmq:
+    image: rabbitmq:3.6.12-management-alpine
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+  monitor:
+    build: SpringBootAdmin/service-monitoreo/
+    ports:
+      - "8090:8090"
+  mensajes-chats-microservicio:
+    build: CrudChatyMensajes/api-chat/
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://red-social-postgres:5432/redsocial
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_BOOT_ADMIN_CLIENT_URL=http://monitor:8090
+    ports:
+      - "8280:8280"
+    depends_on:
+      - red-social-postgres
+      - rabbitmq
+  usuarios-microservicio:
+    build: CrudUsuarios/api-usuarios/
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://red-social-postgres:5432/redsocial
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_BOOT_ADMIN_CLIENT_URL=http://monitor:8090
+    ports:
+      - "8180:8180"
+    depends_on:
+      - red-social-postgres
+      - rabbitmq
+  amigos-microservicio:
+    build: CrudAmigos/api-amigos/
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://red-social-postgres:5432/redsocial
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_BOOT_ADMIN_CLIENT_URL=http://monitor:8090
+    ports:
+      - "8380:8380"
+    depends_on:
+      - red-social-postgres
+      - rabbitmq
